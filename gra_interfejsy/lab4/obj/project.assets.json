@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Piotrek\\Desktop\\gra_interfejsy\\lab4\\lab4.csproj",
+      "projectUniqueName": "C:\\Users\\Piotrek\\Documents\\GitHub\\gra_TIU\\gra_interfejsy\\lab4\\lab4.csproj",
       "projectName": "lab4",
-      "projectPath": "C:\\Users\\Piotrek\\Desktop\\gra_interfejsy\\lab4\\lab4.csproj",
+      "projectPath": "C:\\Users\\Piotrek\\Documents\\GitHub\\gra_TIU\\gra_interfejsy\\lab4\\lab4.csproj",
       "packagesPath": "C:\\Users\\Piotrek\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Piotrek\\Desktop\\gra_interfejsy\\lab4\\obj\\",
+      "outputPath": "C:\\Users\\Piotrek\\Documents\\GitHub\\gra_TIU\\gra_interfejsy\\lab4\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Piotrek\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -32,6 +32,23 @@
             width: 60px;
         }
 
+        .saw {
+            position: absolute;
+            height: 80px;
+            width: 80px;
+            background-color: transparent;
+        }
+
+        #wall {
+            position: absolute;
+            right: 250px;
+            top: 150px;
+            height: 400px;
+            width: 60px;
+            background-image: url('/grafika/wall.png');
+            background-size: cover;
+        }
+
         button {
             position: absolute;
             padding: 15px 30px;
@@ -108,16 +125,26 @@
         const initialEnemySpeed = 3;
         var enemySpeed = initialEnemySpeed;
         var timeLeft = 10;
-        var gameInterval, timeInterval;
+        var gameInterval, timeInterval, sawInterval;
         var keys = {};
         var enemies = [];
+        var saw, wall;
+
+        function initializeElements() {
+            wall = document.createElement('div');
+            wall.id = 'wall';
+            document.body.appendChild(wall);
+            document.getElementById('hero').style.display = 'block';
+            
+        }
 
         function startGame() {
+            initializeElements();
+
             document.getElementById('startButton').style.display = 'none';
             document.getElementById('gameOverMessage').style.display = 'none';
             document.getElementById('winMessage').style.display = 'none';
             document.getElementById('restartButton').style.display = 'none';
-            document.getElementById('hero').style.display = 'block';
 
             level = 1;
             timeLeft = 10;
@@ -128,6 +155,7 @@
             document.addEventListener("keyup", handleKeyUp);
 
             startLevel();
+            spawnSaw();
         }
 
         function startLevel() {
@@ -137,12 +165,16 @@
             if (!gameInterval) {
                 gameInterval = setInterval(updateGame, 20);
                 timeInterval = setInterval(updateTime, 1000);
+                sawInterval = setInterval(moveSaw, 20);
             }
         }
 
         function updateGame() {
             moveHero();
             moveEnemies();
+            checkSawCollision();
+            checkWallCollisionHero();
+            checkWallCollisionEnemies();
         }
 
         function updateTime() {
@@ -168,8 +200,8 @@
         }
 
         function resetHeroPosition() {
-            x = window.innerWidth / 2 - 50;
-            y = window.innerHeight / 2 - 50;
+            x = window.innerWidth / 2;
+            y = window.innerHeight / 2;
             document.getElementById('hero').style.left = x + 'px';
             document.getElementById('hero').style.top = y + 'px';
         }
@@ -208,6 +240,33 @@
                 document.body.appendChild(enemy);
                 enemies.push(enemy);
             }
+        }
+
+        function spawnSaw() {
+            saw = document.createElement("img");
+            saw.src = "/grafika/saw.png";
+            saw.className = "saw";
+
+            saw.style.left = "100px";
+            saw.style.top = "0px";
+
+            document.body.appendChild(saw);
+            moveSaw();
+        }
+
+        var sawDirection = 1;
+
+        function moveSaw() {
+            var sawY = parseInt(saw.style.top) || 0;
+            var sawHeight = saw.offsetHeight;
+
+            if (sawY <= 5) {
+                sawDirection = 1;
+            } else if (sawY + sawHeight >= window.innerHeight - 5) {
+                sawDirection = -1;
+            }
+
+            saw.style.top = sawY + 5 * sawDirection + "px";
         }
 
         function moveHero() {
@@ -263,6 +322,75 @@
             }
         }
 
+        function checkSawCollision() {
+            var hero = document.getElementById('hero');
+            var heroX = parseInt(hero.style.left);
+            var heroY = parseInt(hero.style.top);
+            var heroWidth = hero.offsetWidth;
+            var heroHeight = hero.offsetHeight;
+
+            var sawX = parseInt(saw.style.left);
+            var sawY = parseInt(saw.style.top);
+            var sawWidth = saw.offsetWidth;
+            var sawHeight = saw.offsetHeight;
+
+            if (
+                heroX < sawX + sawWidth &&
+                heroX + heroWidth > sawX &&
+                heroY < sawY + sawHeight &&
+                heroY + heroHeight > sawY
+            ) {
+                gameOver();
+            }
+        }
+
+        function checkWallCollisionHero() {
+            var hero = document.getElementById('hero');
+            var heroX = x;
+            var heroY = y;
+            var wallRect = {
+                left: parseInt(wall.style.left),
+                right: parseInt(wall.style.left) + 60,
+                top: parseInt(wall.style.top),
+                bottom: parseInt(wall.style.top) + 400
+            };
+
+            if (heroX < wallRect.right &&
+                heroX + 100 > wallRect.left &&
+                heroY < wallRect.bottom &&
+                heroY + 100 > wallRect.top) {
+                if (keys['KeyW']) y += 10;
+                if (keys['KeyS']) y -= 10;
+                if (keys['KeyA']) x += 10;
+                if (keys['KeyD']) x -= 10;
+
+                hero.style.left = x + 'px';
+                hero.style.top = y + 'px';
+            }
+        }
+
+        function checkWallCollisionEnemies() {
+            enemies.forEach(enemy => {
+                var enemyX = parseInt(enemy.style.left);
+                var enemyY = parseInt(enemy.style.top);
+                var wallRect = {
+                    left: parseInt(wall.style.left),
+                    right: parseInt(wall.style.left) + 40,
+                    top: parseInt(wall.style.top),
+                    bottom: parseInt(wall.style.top) + 200
+                };
+
+                if (enemyX < wallRect.right &&
+                    enemyX + 60 > wallRect.left &&
+                    enemyY < wallRect.bottom &&
+                    enemyY + 60 > wallRect.top) {
+                    enemy.style.left = (enemyX - enemySpeed * (Math.random() < 0.5 ? -1 : 1)) + "px";
+                    enemy.style.top = (enemyY - enemySpeed * (Math.random() < 0.5 ? -1 : 1)) + "px";
+                }
+            });
+        }
+
+
         function gameOver() {
             clearInterval(gameInterval);
             clearInterval(timeInterval);
@@ -272,6 +400,8 @@
 
             document.removeEventListener("keydown", handleKeyDown);
             document.removeEventListener("keyup", handleKeyUp);
+
+            keys = {};
         }
 
         function gameWon() {
@@ -288,8 +418,16 @@
         function restartGame() {
             clearInterval(gameInterval);
             clearInterval(timeInterval);
+            clearInterval(sawInterval);
+
             gameInterval = null;
             timeInterval = null;
+
+            if (saw) {
+                saw.remove();
+                saw = null;
+            }
+
             clearEnemies();
             enemies = [];
 
