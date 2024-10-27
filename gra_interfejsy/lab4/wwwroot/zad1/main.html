@@ -1,0 +1,313 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gra poziomowa</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-image: url(/grafika/board.png);
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+        }
+
+        #hero {
+            position: absolute;
+            background-color: transparent;
+            display: none;
+            height: 100px;
+            width: 100px;
+        }
+
+        .enemy {
+            position: absolute;
+            background-color: transparent;
+            height: 60px;
+            width: 60px;
+        }
+
+        button {
+            position: absolute;
+            padding: 15px 30px;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #startButton {
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #restartButton {
+            display: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #score, #level {
+            position: absolute;
+            top: 10px;
+            font-size: 24px;
+            color: white;
+        }
+
+        #score {
+            left: 10px;
+        }
+
+        #level {
+            right: 10px;
+        }
+
+        #gameOverMessage {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: white;
+            display: none;
+        }
+
+        #winMessage {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: green;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="startButton" onclick="startGame()">Start</button>
+    <button id="restartButton" onclick="restartGame()" style="display: none;">Restart</button>
+    <div id="gameOverMessage">Game Over</div>
+    <div id="winMessage">You won!</div>
+    <div id="score">Time Left: 10s</div>
+    <div id="level">Level: 1</div>
+    <img id="hero" src="/grafika/hero.png">
+
+    <script>
+        var x, y;
+        var level = 1;
+        const initialEnemySpeed = 3;
+        var enemySpeed = initialEnemySpeed;
+        var timeLeft = 10;
+        var gameInterval, timeInterval;
+        var keys = {};
+        var enemies = [];
+
+        function startGame() {
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('gameOverMessage').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'none';
+            document.getElementById('restartButton').style.display = 'none';
+            document.getElementById('hero').style.display = 'block';
+
+            level = 1;
+            timeLeft = 10;
+            resetHeroPosition();
+            updateScoreAndLevel();
+
+            document.addEventListener("keydown", handleKeyDown);
+            document.addEventListener("keyup", handleKeyUp);
+
+            startLevel();
+        }
+
+        function startLevel() {
+            spawnEnemies(level);
+
+
+            if (!gameInterval) {
+                gameInterval = setInterval(updateGame, 20);
+                timeInterval = setInterval(updateTime, 1000);
+            }
+        }
+
+        function updateGame() {
+            moveHero();
+            moveEnemies();
+        }
+
+        function updateTime() {
+            timeLeft--;
+            document.getElementById('score').innerText = "Time Left: " + timeLeft + "s";
+
+            if (timeLeft <= 0) {
+                level++;
+                timeLeft = 10;
+
+                if (level > 8) {
+                    gameWon();
+                } else {
+                    updateScoreAndLevel();
+                    startLevel();
+                }
+            }
+        }
+
+        function updateScoreAndLevel() {
+            document.getElementById('level').innerText = "Level: " + level;
+            document.getElementById('score').innerText = "Time Left: " + timeLeft + "s";
+        }
+
+        function resetHeroPosition() {
+            x = window.innerWidth / 2 - 50;
+            y = window.innerHeight / 2 - 50;
+            document.getElementById('hero').style.left = x + 'px';
+            document.getElementById('hero').style.top = y + 'px';
+        }
+
+        function clearEnemies() {
+            enemies.forEach(enemy => enemy.remove());
+            enemies = [];
+        }
+
+        function spawnEnemies(count) {
+            for (let i = 0; i < count; i++) {
+                const enemy = document.createElement("img");
+                enemy.src = "/grafika/enemy.gif";
+                enemy.className = "enemy";
+
+                const corner = Math.floor(Math.random() * 4);
+                switch (corner) {
+                    case 0:
+                        enemy.style.left = "0px";
+                        enemy.style.top = "0px";
+                        break;
+                    case 1:
+                        enemy.style.left = (window.innerWidth - 60) + "px";
+                        enemy.style.top = "0px";
+                        break;
+                    case 2:
+                        enemy.style.left = "0px";
+                        enemy.style.top = (window.innerHeight - 60) + "px";
+                        break;
+                    case 3:
+                        enemy.style.left = (window.innerWidth - 60) + "px";
+                        enemy.style.top = (window.innerHeight - 60) + "px";
+                        break;
+                }
+
+                document.body.appendChild(enemy);
+                enemies.push(enemy);
+            }
+        }
+
+        function moveHero() {
+            var windowWidth = window.innerWidth;
+            var windowHeight = window.innerHeight;
+
+            if (keys['KeyW'] && y > 0) y -= 10;
+            if (keys['KeyS'] && y + 100 < windowHeight) y += 10;
+            if (keys['KeyA'] && x > 0) x -= 10;
+            if (keys['KeyD'] && x + 100 < windowWidth) x += 10;
+
+            document.getElementById('hero').style.left = x + 'px';
+            document.getElementById('hero').style.top = y + 'px';
+        }
+
+        function moveEnemies() {
+            enemies.forEach(enemy => {
+                var enemyX = parseInt(enemy.style.left);
+                var enemyY = parseInt(enemy.style.top);
+
+                var deltaX = x - enemyX;
+                var deltaY = y - enemyY;
+                var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                if (distance > 0) {
+                    enemy.style.left = enemyX + (deltaX / distance) * enemySpeed + 'px';
+                    enemy.style.top = enemyY + (deltaY / distance) * enemySpeed + 'px';
+                }
+
+                checkCollision(enemy);
+            });
+        }
+
+        function checkCollision(enemy) {
+            var hero = document.getElementById('hero');
+            var heroX = parseInt(hero.style.left);
+            var heroY = parseInt(hero.style.top);
+            var heroWidth = hero.offsetWidth;
+            var heroHeight = hero.offsetHeight;
+
+            var enemyX = parseInt(enemy.style.left);
+            var enemyY = parseInt(enemy.style.top);
+            var enemyWidth = enemy.offsetWidth;
+            var enemyHeight = enemy.offsetHeight;
+
+            if (
+                heroX < enemyX + enemyWidth &&
+                heroX + heroWidth > enemyX &&
+                heroY < enemyY + enemyHeight &&
+                heroY + heroHeight > enemyY
+            ) {
+                gameOver();
+            }
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+
+            document.getElementById('gameOverMessage').style.display = 'block';
+            document.getElementById('restartButton').style.display = 'block';
+
+            document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("keyup", handleKeyUp);
+        }
+
+        function gameWon() {
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+
+            document.getElementById('winMessage').style.display = 'block';
+            document.getElementById('restartButton').style.display = 'block';
+
+            document.removeEventListener("keydown", handleKeyDown);
+            document.removeEventListener("keyup", handleKeyUp);
+        }
+
+        function restartGame() {
+            clearInterval(gameInterval);
+            clearInterval(timeInterval);
+            gameInterval = null;
+            timeInterval = null;
+            clearEnemies();
+            enemies = [];
+
+            document.getElementById('gameOverMessage').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'none';
+            document.getElementById('restartButton').style.display = 'none';
+            timeLeft = 10;
+
+            startGame();
+        }
+
+        function handleKeyDown(event) {
+            keys[event.code] = true;
+        }
+
+        function handleKeyUp(event) {
+            keys[event.code] = false;
+        }
+    </script>
+</body>
+</html>
